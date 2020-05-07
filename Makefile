@@ -1,6 +1,7 @@
 RANGER_DIR=$(if $(XDG_CONFIG_HOME),$(XDG_CONFIG_HOME),$(HOME)/.config)/ranger
 PLUGIN_DIR=$(RANGER_DIR)/plugins
-RC_FILE=$(RANGER_DIR)/rc.conf
+RM ?= $(shell which rm)
+
 
 install:
 	install -d $(PLUGIN_DIR)
