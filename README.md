@@ -2,6 +2,8 @@
 
 This is a plugin for [ranger](https://ranger.github.io) file manager that makes it much easier to compress and extract archives. It depends on [atool](https://www.nongnu.org/atool/). Atool itself depends on archivers such as zip, tar, and 7z.
 
+[![asciicast](https://asciinema.org/a/X7GGtdEk6KXU3F4qDL10iGqgo.svg)](https://asciinema.org/a/X7GGtdEk6KXU3F4qDL10iGqgo)
+
 ## Installation
 
 ### Atool installation
