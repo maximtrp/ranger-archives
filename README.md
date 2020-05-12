@@ -4,7 +4,19 @@ This is a plugin for [ranger](https://ranger.github.io) file manager that makes 
 
 ## Installation
 
+### Method 1
+
 Copy `compress.py` and `extract.py` files to `~/.config/ranger/plugins` folder and restart ranger.
+
+### Method 2
+
+Run the following commands in console:
+
+```bash
+git clone https://github.com/maximtrp/ranger-archives.git
+cd ranger-archives
+make install
+```
 
 ## Usage
 
