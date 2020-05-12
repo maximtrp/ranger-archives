@@ -1,14 +1,28 @@
 # ranger-archives
 
-This is a plugin for [ranger](https://ranger.github.io) file manager that makes it much easier to compress and extract archives. It depends on [atool](https://www.nongnu.org/atool/).
+This is a plugin for [ranger](https://ranger.github.io) file manager that makes it much easier to compress and extract archives. It depends on [atool](https://www.nongnu.org/atool/). Atool itself depends on archivers such as zip, tar, and 7z.
 
 ## Installation
 
-### Method 1
+### Atool installation
+
+Arch Linux:
+
+```bash
+sudo pacman -S atool
+```
+
+Ubuntu:
+
+```bash
+sudo apt install atool
+```
+
+### Plugin installation: method 1
 
 Copy `compress.py` and `extract.py` files to `~/.config/ranger/plugins` folder and restart ranger.
 
-### Method 2
+### Plugin installation: method 2
 
 Run the following commands in console:
 
