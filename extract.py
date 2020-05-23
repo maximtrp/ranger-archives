@@ -24,7 +24,9 @@ class extract(Command):
 
         line_args = self.line.split()[1:]
         if line_args:
-            flags = ['-X', os.path.join(cwd.path, "".join(line_args))]
+            extraction_dir = os.path.join(cwd.path, "".join(line_args))
+            os.makedirs(extraction_dir, exist_ok=True)
+            flags = ['-X', extraction_dir]
             flags += ['-e']
         else:
             flags = ['-X', cwd.path]
@@ -34,9 +36,9 @@ class extract(Command):
         self.fm.cut_buffer = False
 
         if len(copied_files) == 1:
-            descr = "extracting: " + os.path.basename(one_file.path)
+            descr = "Extracting: " + os.path.basename(one_file.path)
         else:
-            descr = "extracting files from: " + os.path.basename(one_file.dirname)
+            descr = "Extracting files from: " + os.path.basename(one_file.dirname)
         obj = CommandLoader(args=['aunpack'] + flags \
             + [f.path for f in copied_files], descr=descr, read=True)
 
@@ -59,11 +61,7 @@ class extract_to_dirs(Command):
             cwd.load_content()
 
         def make_flags(fn):
-            dirname = os.path.splitext(fn)[0] + os.path.sep
-            #os.mkdir(dirname, exists_ok=True)
-            flags = ['-X', dirname]
-            #flags += self.line.split()[1:]
-            flags += ['-e']
+            flags = ['-D']
             return flags
 
         one_file = copied_files[0]
