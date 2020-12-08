@@ -61,7 +61,8 @@ class extract_to_dirs(Command):
             cwd.load_content()
 
         def make_flags(fn):
-            flags = ['-D']
+            fn_wo_ext = os.path.basename(os.path.splitext(fn)[0])
+            flags = ['-X', fn_wo_ext]
             return flags
 
         one_file = copied_files[0]
@@ -75,7 +76,10 @@ class extract_to_dirs(Command):
             descr = "Extracting files from: " + os.path.basename(one_file.dirname)
 
         # Extracting files
-        for f in copied_files:        
-            obj = CommandLoader(args=['aunpack'] + make_flags(f.path) + [f.path], descr=descr, read=True)
+        for f in copied_files:
+            obj = CommandLoader(
+                args=['aunpack'] + make_flags(f.path) + [f.path],
+                descr=descr, read=True
+            )
             obj.signal_bind('after', refresh)
             self.fm.loader.add(obj)
