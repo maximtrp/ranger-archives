@@ -1,37 +1,51 @@
-import os
-from ranger.api.commands import *
+import os.path
+from ranger.api.commands import Command
 from ranger.core.loader import CommandLoader
+from .archives_utils import parse_escape_args, get_compression_command
+from re import search
+
 
 class compress(Command):
     def execute(self):
         """ Compress marked files to current directory """
         cwd = self.fm.thisdir
         marked_files = cwd.get_selection()
+        files_num = len(marked_files)
 
         if not marked_files:
             return
 
-        def refresh(_):
-            cwd = self.fm.get_directory(original_path)
-            cwd.load_content()
+        # Preparing names of archived files
+        filenames = [os.path.relpath(f.path, cwd.path) for f in marked_files]
 
-        original_path = cwd.path
+        # Parsing arguments
+        flags = parse_escape_args(self.line.strip())[1:]
+        archive_name = None
 
-        # Parsing arguments line
-        parts = self.line.strip().split()
-        if len(parts) > 1:
-            au_flags = [' '.join(parts[1:])]
-        else:
-            au_flags = [os.path.basename(self.fm.thisdir.path) + '.zip']
+        if flags:
+            flags_last = flags.pop()
+
+            if search(r".*?\.\w+", flags_last) is None:
+                flags += [flags_last]
+            else:
+                archive_name = flags_last
+
+        if not archive_name:
+            archive_name = os.path.basename(self.fm.thisdir.path) + '.zip'
+
+        # Preparing command for archiver
+        command = get_compression_command(archive_name, flags, filenames)
 
         # Making description line
-        files_num = len(marked_files)
-        files_num_str = str(files_num) + ' objects' if files_num > 1 else '1 object'
-        descr = "Compressing " + files_num_str + " -> " + os.path.basename(au_flags[0])
+        files_num_str = f'{files_num} objects' if files_num > 1 else '1 object'
+        descr = f"Compressing {files_num_str} -> " + os.path.basename(archive_name)
 
         # Creating archive
-        obj = CommandLoader(args=['apack'] + au_flags + \
-                [os.path.relpath(f.path, cwd.path) for f in marked_files], descr=descr, read=True)
+        obj = CommandLoader(args=command, descr=descr, read=True)
+
+        def refresh(_):
+            _cwd = self.fm.get_directory(cwd.path)
+            _cwd.load_content()
 
         obj.signal_bind('after', refresh)
         self.fm.loader.add(obj)
