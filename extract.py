@@ -34,7 +34,7 @@ class extract(Command):
 
 class extract_to_dirs(Command):
     def execute(self):
-        """ Extract copied files to a subdirectories """
+        """Extract copied files to a subdirectories"""
         cwd = self.fm.thisdir
         files = cwd.get_selection()
         cwd = self.fm.thisdir
