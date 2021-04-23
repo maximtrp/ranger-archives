@@ -166,7 +166,7 @@ def get_compression_command(
 
 def get_decompression_command(
         archive_name: str,
-        flags: list[str],
+        flags: list,
         to_dir: str = None) -> list[str]:
     """Returns decompression command"""
     tar_full = r"\.tar\.(bz2*|g*z|lz(4|ma)|lr*z|lzop|xz|zst)$"
@@ -180,7 +180,7 @@ def get_decompression_command(
 
         if binary:
             if to_dir:
-                flags += ['-C', to_dir]
+                flags += ['-C', quote(to_dir)]
             command = [binary_path, "-xf", *flags, archive_name]
             return command
 

@@ -27,8 +27,8 @@ The following commands are available:
 
 * `:extract [DIRECTORY]`: extracting files to a current or specified directory (optional).
 * `:extract_raw [FLAGS]`: extracting files with specific flags (optional).
-* `:extract_to_dirs`: extracting each archive to a separate directory. E.g.: `1.zip` to dir `1`, `2.zip` to dir `2`, etc.
-* `:compress [FILENAME.EXT]`: compressing selected/marked files/directories to an archive. If an archive filename is not specified, it will be named after a parent dir.
+* `:extract_to_dirs [FLAGS]`: extracting each archive to a separate directory. E.g.: `1.zip` to dir `1`, `2.zip` to dir `2`, etc.
+* `:compress [FLAGS] [FILENAME.EXT]`: compressing selected/marked files/directories to an archive. If an archive filename is not specified, it will be named after a parent dir.
 
 ## Shortcuts
 
