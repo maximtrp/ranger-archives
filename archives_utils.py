@@ -246,7 +246,7 @@ def get_decompression_command(
         to_dir: str = None) -> list[str]:
     """Returns decompression command"""
     tar_full = r"\.tar\.(bz2*|g*z|lz(4|ma)|lr*z|lzop|xz|zst)$"
-    tar_short = r"\.(t(a|b|g|l|x)z2*|)"
+    tar_short = r"\.t(a|b|g|l|x)z2*"
 
     if search(tar_full, archive_name) is not None or\
             search(tar_short, archive_name) is not None:
