@@ -133,8 +133,7 @@ def get_compression_command(
 
     elif search(r"\.lzop$", archive_name) is not None:
         # Matches:
-        # .tar.lzop
-        # .tzo
+        # .lzop
         bins = ["lzop"]
         binary, binary_path = find_binaries(bins)
         if binary:
@@ -158,10 +157,8 @@ def get_compression_command(
 
     elif search(r"\.(xz|lzma)$", archive_name) is not None:
         # Matches:
-        # .tar.xz
-        # .tar.lzma
-        # .txz
-        # .tlz
+        # .xz
+        # .lzma
         bins = ["pixz", "xz"]
         binary, binary_path = find_binaries(bins)
         if binary:
