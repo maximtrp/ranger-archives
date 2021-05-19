@@ -8,8 +8,8 @@ This is a plugin for [ranger](https://ranger.github.io) file manager that makes 
 
 ### Plugin installation: method 1
 
-Copy `compress.py`, `extract.py`, `archives_utils.py` files
-to `~/.config/ranger/plugins` folder and restart ranger.
+Copy `ranger-archives` folder to `~/.config/ranger/plugins`
+folder and restart ranger.
 
 ### Plugin installation: method 2
 
