@@ -6,19 +6,11 @@ This is a plugin for [ranger](https://ranger.github.io) file manager that makes 
 
 ## Installation
 
-### Plugin installation: method 1
-
-Copy `ranger-archives` folder to `~/.config/ranger/plugins`
-folder and restart ranger.
-
-### Plugin installation: method 2
-
-Run the following commands in console:
+Clone this repo into ranger plugins folder. In Linux, it is typically located here: `~/.config/ranger/plugins`.
 
 ```bash
+cd ~/.config/ranger/plugins
 git clone https://github.com/maximtrp/ranger-archives.git
-cd ranger-archives
-make install
 ```
 
 ## Usage
