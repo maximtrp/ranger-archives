@@ -1,16 +1,16 @@
 from shlex import split, quote
 from shutil import which
 from re import search
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 
 
-def parse_escape_args(args: str = "") -> list[str]:
+def parse_escape_args(args: str = "") -> List[str]:
     """Parses and escapes arguments"""
     return list(map(quote, split(args)))
 
 
 def find_binaries(
-        binaries: list[str]) -> Union[Tuple[str, str], Tuple[None, None]]:
+        binaries: List[str]) -> Union[Tuple[str, str], Tuple[None, None]]:
     """Finds archivers binaries in PATH"""
     res = list(filter(
         lambda x: x[1] is not None,
@@ -20,8 +20,8 @@ def find_binaries(
 
 def get_compression_command(
         archive_name: str,
-        flags: list[str],
-        files: list[str]) -> list[str]:
+        flags: List[str],
+        files: List[str]) -> List[str]:
     """Returns compression command"""
     if search(r"\.(tar\.|t)bz[2]*$", archive_name) is not None:
         # Matches:
@@ -240,7 +240,7 @@ def get_compression_command(
 def get_decompression_command(
         archive_name: str,
         flags: list,
-        to_dir: str = None) -> list[str]:
+        to_dir: str = None) -> List[str]:
     """Returns decompression command"""
     tar_full = r"\.tar\.(bz2*|g*z|lz(4|ma)|lr*z|lzop|xz|zst)$"
     tar_short = r"\.t(a|b|g|l|x)z2*"
