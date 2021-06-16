@@ -1,16 +1,17 @@
 from shlex import split, quote
 from shutil import which
 from re import search
-from typing import Union, Tuple
+from typing import Union, Tuple, List
+from os import makedirs
 
 
-def parse_escape_args(args: str = "") -> list[str]:
+def parse_escape_args(args: str = "") -> List[str]:
     """Parses and escapes arguments"""
     return list(map(quote, split(args)))
 
 
 def find_binaries(
-        binaries: list[str]) -> Union[Tuple[str, str], Tuple[None, None]]:
+        binaries: List[str]) -> Union[Tuple[str, str], Tuple[None, None]]:
     """Finds archivers binaries in PATH"""
     res = list(filter(
         lambda x: x[1] is not None,
@@ -20,8 +21,8 @@ def find_binaries(
 
 def get_compression_command(
         archive_name: str,
-        flags: list[str],
-        files: list[str]) -> list[str]:
+        flags: List[str],
+        files: List[str]) -> List[str]:
     """Returns compression command"""
     if search(r"\.(tar\.|t)bz[2]*$", archive_name) is not None:
         # Matches:
@@ -33,7 +34,7 @@ def get_compression_command(
         binary, binary_path = find_binaries(bins)
 
         if binary:
-            command = ["tar", "-cf", archive_name, "-I", binary_path, *flags, *files]
+            command = ["tar", "-cf", archive_name, "--use-compress-program", binary_path, *flags, *files]
             return command
 
     elif search(r"\.bz[2]*$", archive_name) is not None:
@@ -58,7 +59,7 @@ def get_compression_command(
         binary, binary_path = find_binaries(bins)
 
         if binary:
-            command = ["tar", "-cf", archive_name, "-I", binary_path, *flags, *files]
+            command = ["tar", "-cf", archive_name, "--use-compress-program", binary_path, *flags, *files]
             return command
 
     elif search(r"\.g*z$", archive_name) is not None:
@@ -77,7 +78,7 @@ def get_compression_command(
         bins = ["lz4"]
         binary, binary_path = find_binaries(bins)
         if binary:
-            command = ["tar", "-cf", archive_name, "-I", binary_path, *flags, *files]
+            command = ["tar", "-cf", archive_name, "--use-compress-program", binary_path, *flags, *files]
             return command
 
     elif search(r"\.lz4$", archive_name) is not None:
@@ -96,7 +97,7 @@ def get_compression_command(
         bins = ["lrzip"]
         binary, binary_path = find_binaries(bins)
         if binary:
-            command = ["tar", "-cf", archive_name, "-I", binary_path, *flags, *files]
+            command = ["tar", "-cf", archive_name, "--use-compress-program", binary_path, *flags, *files]
             return command
 
     elif search(r"\.lrz$", archive_name) is not None:
@@ -110,7 +111,7 @@ def get_compression_command(
         bins = ["plzip", "lzip"]
         binary, binary_path = find_binaries(bins)
         if binary:
-            command = ["tar", "-cf", archive_name, "-I", binary_path, *flags, *files]
+            command = ["tar", "-cf", archive_name, "--use-compress-program", binary_path, *flags, *files]
             return command
 
     elif search(r"\.lz$", archive_name) is not None:
@@ -128,7 +129,7 @@ def get_compression_command(
         bins = ["lzop"]
         binary, binary_path = find_binaries(bins)
         if binary:
-            command = ["tar", "-cf", archive_name, "-I", binary_path, *flags, *files]
+            command = ["tar", "-cf", archive_name, "--use-compress-program", binary_path, *flags, *files]
             return command
 
     elif search(r"\.lzop$", archive_name) is not None:
@@ -152,7 +153,7 @@ def get_compression_command(
         bins = ["pixz", "xz"]
         binary, binary_path = find_binaries(bins)
         if binary:
-            command = ["tar", "-cf", archive_name, "-I", binary_path, *flags, *files]
+            command = ["tar", "-cf", archive_name, "--use-compress-program", binary_path, *flags, *files]
             return command
 
     elif search(r"\.(xz|lzma)$", archive_name) is not None:
@@ -169,7 +170,7 @@ def get_compression_command(
         bins = ["zstd"]
         binary, binary_path = find_binaries(bins)
         if binary:
-            command = ["tar", "-cf", archive_name, "-I", binary_path, *flags, *files]
+            command = ["tar", "-cf", archive_name, "--use-compress-program", binary_path, *flags, *files]
             return command
 
     elif search(r"\.7z$", archive_name) is not None:
@@ -240,10 +241,13 @@ def get_compression_command(
 def get_decompression_command(
         archive_name: str,
         flags: list,
-        to_dir: str = None) -> list[str]:
+        to_dir: str = None) -> List[str]:
     """Returns decompression command"""
     tar_full = r"\.tar\.(bz2*|g*z|lz(4|ma)|lr*z|lzop|xz|zst)$"
     tar_short = r"\.t(a|b|g|l|x)z2*"
+
+    if to_dir:
+        makedirs(quote(to_dir), exist_ok=True)
 
     if search(tar_full, archive_name) is not None or\
             search(tar_short, archive_name) is not None:
@@ -254,7 +258,7 @@ def get_decompression_command(
         if binary:
             if to_dir:
                 flags += ['-C', quote(to_dir)]
-            command = [binary_path, "-xf", *flags, archive_name]
+            command = [binary_path, "-xf", archive_name, *flags]
             return command
 
     elif search(r"\.7z$", archive_name) is not None:

@@ -1,4 +1,5 @@
 import os
+from re import findall
 from ranger.api.commands import Command
 from ranger.core.loader import CommandLoader
 from .archives_utils import parse_escape_args, get_decompression_command
@@ -80,7 +81,7 @@ class extract_to_dirs(Command):
 
         for file in files:
             descr = "Extracting: " + os.path.basename(file.path)
-            dirname, _ = os.path.splitext(os.path.basename(file.path))
+            dirname = findall(r"(.*?)\.", file.path)[0]
             command = get_decompression_command(file.path, flags, dirname)
             obj = CommandLoader(args=command, descr=descr, read=True)
             obj.signal_bind('after', refresh)
