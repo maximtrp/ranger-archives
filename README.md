@@ -24,6 +24,16 @@ The following commands are available:
 
 ## Examples
 
+### Extraction
+
+#### Using flags
+
+This is an example of extracting a zip archive to a directory `dirname` and escaping all non-ASCII Unicode chars:
+
+```
+:extract_raw -U -d dirname
+```
+
 ### Compression
 
 #### Basic
