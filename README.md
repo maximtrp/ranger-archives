@@ -22,6 +22,29 @@ The following commands are available:
 * `:extract_to_dirs [FLAGS]`: extracting each archive to a separate directory. E.g.: `1.zip` to dir `1`, `2.zip` to dir `2`, etc.
 * `:compress [FLAGS] [FILENAME.EXT]`: compressing selected/marked files/directories to an archive. If an archive filename is not specified, it will be named after a parent dir.
 
+## Examples
+
+### Compression
+
+#### Basic
+
+Select a file or a folder (or multiple files and folder) in *ranger* and enter:
+
+```
+:compress files.zip
+```
+
+#### Using flags 
+
+`zip` archiver provides a flag for better compression ratio `-9` (just like `gzip` and many others).
+We can just add it before an archive filename:
+
+```
+:compress -9 file.zip
+```
+
+The other flags can be used likewise.
+
 ## Shortcuts
 
 You can also add these lines to `~/.config/ranger/rc.conf` to use these keyboard shortcuts (`ec`, `ex`):
