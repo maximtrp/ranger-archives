@@ -26,6 +26,20 @@ The following commands are available:
 
 ### Extraction
 
+#### Basic
+
+Select an archive and type:
+
+```
+:extract some_dir
+```
+
+Or even just:
+
+```
+extract
+```
+
 #### Using flags
 
 This is an example of extracting a zip archive to a directory `dirname` and escaping all non-ASCII Unicode chars:
