@@ -37,7 +37,7 @@ Select an archive and type:
 Or even just:
 
 ```
-extract
+:extract
 ```
 
 #### Using flags
