@@ -1,6 +1,6 @@
 # ranger-archives
 
-This is a plugin for [ranger](https://ranger.github.io) file manager that makes it much easier to compress and extract archives. It depends on archivers/compression programs such as `tar`, `zip`, `7z`, etc.
+This is a plugin for [ranger](https://ranger.github.io) file manager that makes it much easier to compress and extract archives. It depends on archivers/compression programs such as `tar`, `zip`, `7z`, etc. It also supports and prioritizes parallelized versions of compression programs (like `pbzip2`, `pigz`, `pixz`, etc).
 
 [![asciicast](https://asciinema.org/a/ii764wsN8rWZfMCwVlnJAWcPM.svg)](https://asciinema.org/a/ii764wsN8rWZfMCwVlnJAWcPM)
 
