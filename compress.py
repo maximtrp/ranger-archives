@@ -1,8 +1,8 @@
 import os.path
+from re import search
 from ranger.api.commands import Command
 from ranger.core.loader import CommandLoader
 from .archives_utils import parse_escape_args, get_compression_command
-from re import search
 
 
 class compress(Command):
