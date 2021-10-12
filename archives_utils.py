@@ -33,7 +33,7 @@ def get_compression_command(
         binary, binary_path = find_binaries(bins)
 
         if binary:
-            command = ["tar", "-cf", archive_name, "-I", binary_path, *flags, *files]
+            command = ["tar", "-cf", archive_name, "--use-compress-program", binary_path, *flags, *files]
             return command
 
     elif search(r"\.bz[2]*$", archive_name) is not None:
@@ -183,7 +183,7 @@ def get_compression_command(
     elif search(r"\.rar$", archive_name) is not None:
         bins = ["rar"]
         binary, binary_path = find_binaries(bins)
-        flags_mod = flags + ["r"]  # enable recursion into subdirs
+        flags_mod = flags
         if binary:
             command = [binary_path, "a", *flags_mod, archive_name, *files]
             return command
