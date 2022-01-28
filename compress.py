@@ -34,6 +34,7 @@ class compress(Command):
             archive_name = os.path.basename(self.fm.thisdir.path) + '.zip'
 
         # Preparing command for archiver
+        archive_name = archive_name.strip("'")
         command = get_compression_command(archive_name, flags, filenames)
 
         # Making description line
