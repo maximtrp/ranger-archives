@@ -58,6 +58,12 @@ Select a file or a folder (or multiple files and folder) in *ranger* and enter:
 :compress files.zip
 ```
 
+or (use brackets with filenames containing spaces)
+
+```
+:compress "my important files.zip"
+```
+
 #### Using flags 
 
 `zip` archiver provides a flag for better compression ratio `-9` (just like `gzip` and many others).
