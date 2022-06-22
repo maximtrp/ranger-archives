@@ -81,7 +81,7 @@ class extract_to_dirs(Command):
 
         for file in files:
             descr = "Extracting: " + os.path.basename(file.path)
-            dirname = findall(r"(.*?)\.", file.path)[0]
+            dirname = findall(r"(.*?)\.", os.path.basename(file.path))[0]
             command = get_decompression_command(file.path, flags, dirname)
             obj = CommandLoader(args=command, descr=descr, read=True)
             obj.signal_bind('after', refresh)
