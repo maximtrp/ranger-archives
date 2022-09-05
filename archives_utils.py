@@ -271,12 +271,18 @@ def get_decompression_command(
             return command
 
     elif search(r"\.rar$", archive_name) is not None:
-        bins = ["rar"]
+        bins = ["7z", "unrar", "rar"]
         binary, binary_path = find_binaries(bins)
-        if binary:
+        
+        if binary == 'rar' or binary == 'unrar':
             command = [binary_path, "x", *flags, archive_name]
             if to_dir:
                 command += [to_dir]
+            return command
+        elif binary == '7z':
+            if to_dir:
+                flags += ['-o{}'.format(to_dir)]
+            command = [binary_path, "x", *flags, archive_name]
             return command
 
     elif search(r"\.zip$", archive_name) is not None:
