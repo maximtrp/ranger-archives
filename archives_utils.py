@@ -336,6 +336,18 @@ def get_decompression_command(
             command = [binary_path, "x", *flags, archive_name]
             return command
 
+    elif search(r"\.deb$", archive_name) is not None:
+        # Matches:
+        # .deb
+        bins = ["ar"]
+        binary, binary_path = find_binaries(bins)
+
+        if binary:
+            if to_dir:
+                flags += ['--output={}'.format(to_dir)]
+            command = [binary_path, "xv", *flags, archive_name]
+            return command
+
     fallback_command = ["7z", "x", archive_name] +\
         (['-o{}'.format(to_dir)] if to_dir else [])
     return fallback_command
