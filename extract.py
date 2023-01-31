@@ -1,5 +1,5 @@
 import os
-from re import findall
+import pathlib
 from ranger.api.commands import Command
 from ranger.core.loader import CommandLoader
 from .archives_utils import parse_escape_args, get_decompression_command
@@ -26,7 +26,7 @@ class extract(Command):
         self.fm.cut_buffer = False
 
         for file in files:
-            descr = "Extracting: " + os.path.basename(file.path)
+            descr = f"Extracting: {os.path.basename(file.path)}"
             command = get_decompression_command(file.path, [], dirname)
             obj = CommandLoader(args=command, descr=descr, read=True)
             obj.signal_bind('after', refresh)
@@ -54,7 +54,7 @@ class extract_raw(Command):
         self.fm.cut_buffer = False
 
         for file in files:
-            descr = "Extracting: " + os.path.basename(file.path)
+            descr = f"Extracting: {os.path.basename(file.path)}"
             command = get_decompression_command(file.path, flags)
             obj = CommandLoader(args=command, descr=descr, read=True)
             obj.signal_bind('after', refresh)
@@ -80,8 +80,8 @@ class extract_to_dirs(Command):
         self.fm.cut_buffer = False
 
         for file in files:
-            descr = "Extracting: " + os.path.basename(file.path)
-            dirname = findall(r"(.*?)\.", os.path.basename(file.path))[0]
+            descr = f"Extracting: {os.path.basename(file.path)}"
+            dirname = pathlib.Path(file.path).stem
             command = get_decompression_command(file.path, flags, dirname)
             obj = CommandLoader(args=command, descr=descr, read=True)
             obj.signal_bind('after', refresh)

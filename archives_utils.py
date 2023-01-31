@@ -273,7 +273,7 @@ def get_decompression_command(
     elif search(r"\.rar$", archive_name) is not None:
         bins = ["7z", "unrar", "rar"]
         binary, binary_path = find_binaries(bins)
-        
+
         if binary == 'rar' or binary == 'unrar':
             command = [binary_path, "x", *flags, archive_name]
             if to_dir:

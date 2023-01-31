@@ -31,7 +31,7 @@ class compress(Command):
                 archive_name = flags_last
 
         if not archive_name:
-            archive_name = os.path.basename(self.fm.thisdir.path) + '.zip'
+            archive_name = f'{os.path.basename(self.fm.thisdir.path)}.zip'
 
         # Preparing command for archiver
         archive_name = archive_name.strip("'")
@@ -39,7 +39,7 @@ class compress(Command):
 
         # Making description line
         files_num_str = f'{files_num} objects' if files_num > 1 else '1 object'
-        descr = f"Compressing {files_num_str} -> " + os.path.basename(archive_name)
+        descr = f"Compressing {files_num_str} -> {os.path.basename(archive_name)}"
 
         # Creating archive
         obj = CommandLoader(args=command, descr=descr, read=True)
@@ -55,4 +55,7 @@ class compress(Command):
         """ Complete with current folder name """
 
         extension = ['.7z', '.zip', '.tar.gz', '.tar.bz2', '.tar.xz']
-        return ['compress ' + os.path.basename(self.fm.thisdir.path) + ext for ext in extension]
+        return [
+            f'compress {os.path.basename(self.fm.thisdir.path)}{ext}'
+            for ext in extension
+        ]
