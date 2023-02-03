@@ -82,7 +82,7 @@ class extract_to_dirs(Command):
         for file in files:
             descr = f"Extracting: {os.path.basename(file.path)}"
             dirname = pathlib.Path(file.path).stem
-            command = get_decompression_command(file.path, flags, dirname)
+            command = get_decompression_command(file.path, flags.copy(), dirname)
             obj = CommandLoader(args=command, descr=descr, read=True)
             obj.signal_bind('after', refresh)
             self.fm.loader.add(obj)
