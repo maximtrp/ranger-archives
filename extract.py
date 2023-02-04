@@ -55,7 +55,7 @@ class extract_raw(Command):
 
         for file in files:
             descr = f"Extracting: {os.path.basename(file.path)}"
-            command = get_decompression_command(file.path, flags)
+            command = get_decompression_command(file.path, flags.copy())
             obj = CommandLoader(args=command, descr=descr, read=True)
             obj.signal_bind('after', refresh)
             self.fm.loader.add(obj)
