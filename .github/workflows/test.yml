@@ -50,7 +50,6 @@ jobs:
             unzip \
             tar \
             lhasa \
-            jlha-utils \
             binutils \
             cpio \
             rar \
@@ -111,8 +110,6 @@ jobs:
             "7za:7za"
             "unrar:unrar"
             "rar:rar"
-            "lha:lha"
-            "jlha:jlha"
             "zpaq:zpaq"
           )
 

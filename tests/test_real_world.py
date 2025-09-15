@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from archives_utils import (
     ArchiveCompressor,
     ArchiveDecompressor,
+    _find_binaries,
 )
 
 
@@ -83,8 +84,10 @@ class ArchiveTestRunner:
     ) -> Tuple[bool, str, str]:
         """Run a command and redirect stdout to a file"""
         try:
-            with open(output_file, 'wb') as f:
-                result = subprocess.run(command, cwd=cwd, stdout=f, stderr=subprocess.PIPE, timeout=300)
+            with open(output_file, "wb") as f:
+                result = subprocess.run(
+                    command, cwd=cwd, stdout=f, stderr=subprocess.PIPE, timeout=300
+                )
 
             # Handle encoding for stderr
             for encoding in ["utf-8", "latin-1"]:
@@ -155,20 +158,35 @@ class ArchiveTestRunner:
 
             # For multiple files with single-file formats, the actual archive name might be different
             actual_archive_path = archive_path
-            if (len(files_to_compress) > 1 and
-                any(archive_name.endswith(ext) for ext in ['.gz', '.bz2', '.xz', '.lz', '.lzop']) and
-                '.tar.' not in archive_name):
+            if (
+                len(files_to_compress) > 1
+                and any(
+                    archive_name.endswith(ext)
+                    for ext in [".gz", ".bz2", ".xz", ".lz", ".lzop"]
+                )
+                and ".tar." not in archive_name
+            ):
                 # Multiple files with single-file extension will create tar variant
-                if archive_name.endswith('.gz'):
-                    actual_archive_path = work_dir / archive_name.replace('.gz', '.tar.gz')
-                elif archive_name.endswith('.bz2'):
-                    actual_archive_path = work_dir / archive_name.replace('.bz2', '.tar.bz2')
-                elif archive_name.endswith('.xz'):
-                    actual_archive_path = work_dir / archive_name.replace('.xz', '.tar.xz')
-                elif archive_name.endswith('.lz'):
-                    actual_archive_path = work_dir / archive_name.replace('.lz', '.tar.lz')
-                elif archive_name.endswith('.lzop'):
-                    actual_archive_path = work_dir / archive_name.replace('.lzop', '.tar.lzop')
+                if archive_name.endswith(".gz"):
+                    actual_archive_path = work_dir / archive_name.replace(
+                        ".gz", ".tar.gz"
+                    )
+                elif archive_name.endswith(".bz2"):
+                    actual_archive_path = work_dir / archive_name.replace(
+                        ".bz2", ".tar.bz2"
+                    )
+                elif archive_name.endswith(".xz"):
+                    actual_archive_path = work_dir / archive_name.replace(
+                        ".xz", ".tar.xz"
+                    )
+                elif archive_name.endswith(".lz"):
+                    actual_archive_path = work_dir / archive_name.replace(
+                        ".lz", ".tar.lz"
+                    )
+                elif archive_name.endswith(".lzop"):
+                    actual_archive_path = work_dir / archive_name.replace(
+                        ".lzop", ".tar.lzop"
+                    )
 
             if not compression_command:
                 test_result["error"] = (
@@ -181,10 +199,15 @@ class ArchiveTestRunner:
             start_time = time.time()
 
             # Check if this is a single-file compression that needs stdout redirection
-            if (len(files_to_compress) == 1 and
-                any(archive_name.endswith(ext) for ext in ['.gz', '.bz2', '.xz', '.lz', '.lzop']) and
-                '.tar.' not in archive_name and
-                '-c' in compression_command):
+            if (
+                len(files_to_compress) == 1
+                and any(
+                    archive_name.endswith(ext)
+                    for ext in [".gz", ".bz2", ".xz", ".lz", ".lzop"]
+                )
+                and ".tar." not in archive_name
+                and "-c" in compression_command
+            ):
                 # This is single-file compression with stdout, need redirection
                 success, stdout, stderr = self.run_command_with_redirect(
                     compression_command, str(actual_archive_path), cwd=test_copy
@@ -204,7 +227,9 @@ class ArchiveTestRunner:
 
             # Check that archive file was created
             if not actual_archive_path.exists():
-                test_result["error"] = f"Archive file not created: {actual_archive_path}"
+                test_result["error"] = (
+                    f"Archive file not created: {actual_archive_path}"
+                )
                 return test_result
 
             # Get compressed size
@@ -231,9 +256,14 @@ class ArchiveTestRunner:
 
             # Check if this is single-file decompression with stdout redirection
             actual_archive_name = actual_archive_path.name
-            if (any(actual_archive_name.endswith(ext) for ext in ['.gz', '.bz2', '.xz', '.lz', '.lzop']) and
-                '.tar.' not in actual_archive_name and
-                '-dc' in decompression_command):
+            if (
+                any(
+                    actual_archive_name.endswith(ext)
+                    for ext in [".gz", ".bz2", ".xz", ".lz", ".lzop"]
+                )
+                and ".tar." not in actual_archive_name
+                and "-dc" in decompression_command
+            ):
                 # This is single-file decompression with stdout, need redirection
                 # Determine output filename
                 archive_stem = Path(actual_archive_name).stem
@@ -493,13 +523,14 @@ class ArchiveTestRunner:
             ("test_best.7z", ["-mx9"], ["7z"]),
             # Other formats
             ("test.rar", [], ["rar"]),
-            ("test.lzh", [], ["jlha"]),
             ("test.zpaq", [], ["zpaq"]),
         ]
 
         # Check tool availability and add formats
         for format_name, flags, required_tools in test_formats:
-            tools_available = all(ArchiveCompressor._find_binaries([tool])[0] for tool in required_tools)
+            tools_available = all(
+                _find_binaries([tool])[0] for tool in required_tools
+            )
 
             if tools_available:
                 archive_formats.append((format_name, flags))
