@@ -124,7 +124,7 @@ map ec compress
 Run the comprehensive test suite to verify format support:
 
 ```bash
-python3 test_real_world.py
+python3 tests/test_real_world.py
 ```
 
 This creates test data with various file types and validates compression/decompression for all available formats on your system. The test suite:
