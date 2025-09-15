@@ -1,4 +1,4 @@
-import os.path
+from pathlib import Path
 from re import search
 from ranger.api.commands import Command
 from ranger.core.loader import CommandLoader
@@ -15,8 +15,9 @@ class compress(Command):
         if not marked_files:
             return
 
-        # Preparing names of archived files
-        filenames = [os.path.relpath(f.path, cwd.path) for f in marked_files]
+        # Preparing names of archived files with cross-platform path handling
+        cwd_path = Path(cwd.path)
+        filenames = [str(Path(f.path).relative_to(cwd_path)) for f in marked_files]
 
         # Parsing arguments
         flags = parse_escape_args(self.line.strip())[1:]
@@ -31,7 +32,7 @@ class compress(Command):
                 archive_name = flags_last
 
         if not archive_name:
-            archive_name = f'{os.path.basename(self.fm.thisdir.path)}.zip'
+            archive_name = f'{Path(self.fm.thisdir.path).name}.zip'
 
         # Preparing command for archiver
         archive_name = archive_name.strip("'")
@@ -39,7 +40,7 @@ class compress(Command):
 
         # Making description line
         files_num_str = f'{files_num} objects' if files_num > 1 else '1 object'
-        descr = f"Compressing {files_num_str} -> {os.path.basename(archive_name)}"
+        descr = f"Compressing {files_num_str} -> {Path(archive_name).name}"
 
         # Creating archive
         obj = CommandLoader(args=command, descr=descr, read=True)
@@ -56,6 +57,6 @@ class compress(Command):
 
         extension = ['.7z', '.zip', '.tar.gz', '.tar.bz2', '.tar.xz']
         return [
-            f'compress {os.path.basename(self.fm.thisdir.path)}{ext}'
+            f'compress {Path(self.fm.thisdir.path).name}{ext}'
             for ext in extension
         ]

@@ -1,0 +1,157 @@
+name: Cross-Platform Archive Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install compression tools on Ubuntu
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+
+          # Install basic compression tools
+          sudo apt-get install -y \
+            p7zip-full \
+            gzip \
+            bzip2 \
+            pbzip2 \
+            lbzip2 \
+            xz-utils \
+            pixz \
+            lz4 \
+            zstd \
+            lzip \
+            plzip \
+            lzop \
+            lrzip \
+            unrar \
+            zip \
+            unzip \
+            tar \
+            lha \
+            binutils \
+            cpio
+
+          sudo apt-get install -y rar || echo "rar not available in main repos"
+          sudo apt-get install -y zpaq || echo "zpaq not available in main repos"
+          sudo apt-get install -y pigz || echo "pigz not available"
+
+      - name: Install compression tools on macOS
+        if: matrix.os == 'macos-latest'
+        run: |
+          # Update Homebrew
+          brew update
+
+          # Install basic compression tools
+          brew install \
+            p7zip \
+            bzip2 \
+            pbzip2 \
+            lbzip2 \
+            xz \
+            pixz \
+            lz4 \
+            zstd \
+            lzip \
+            plzip \
+            lzop \
+            lrzip \
+            unrar \
+            rar \
+            zip \
+            lha \
+            pigz
+
+          brew install zpaq || echo "zpaq not available via Homebrew"
+          brew install gnu-tar || echo "gnu-tar not available"
+
+      - name: Verify installed tools
+        run: |
+          echo "=== Verifying installed compression tools ==="
+
+          # List all tools we want to test
+          tools=(
+            "tar:tar --version"
+            "gtar:gtar --version"
+            "gzip:gzip --version"
+            "pigz:pigz --version"
+            "bzip2:bzip2 --version"
+            "pbzip2:pbzip2 --version"
+            "lbzip2:lbzip2 --version"
+            "xz:xz --version"
+            "pixz:pixz --version"
+            "lz4:lz4 --version"
+            "zstd:zstd --version"
+            "lzip:lzip --version"
+            "plzip:plzip --version"
+            "lzop:lzop --version"
+            "lrzip:lrzip --version"
+            "zip:zip -h"
+            "unzip:unzip -v"
+            "7z:7z"
+            "7za:7za"
+            "unrar:unrar"
+            "rar:rar"
+            "lha:lha --version"
+            "zpaq:zpaq"
+          )
+
+          echo "Tool availability:"
+          for tool_entry in "${tools[@]}"; do
+            tool_name="${tool_entry%%:*}"
+            tool_cmd="${tool_entry#*:}"
+
+            if command -v "$tool_name" &> /dev/null; then
+              if eval "$tool_cmd" &>/dev/null 2>&1; then
+                echo "✅ $tool_name - Available and working"
+              else
+                echo "⚠️  $tool_name - Available but command failed"
+              fi
+            else
+              echo "❌ $tool_name - Not found"
+            fi
+          done
+
+          echo -e "\n=== System Information ==="
+          uname -a
+          echo "Python: $(python3 --version)"
+
+      - name: Verify Python setup
+        run: |
+          python3 --version
+          python3 -c "import sys; print(f'Python executable: {sys.executable}')"
+
+      - name: Run comprehensive archive tests
+        run: |
+          python3 tests/test_real_world.py
+
+      - name: Archive test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: |
+            test_results/
+            *.log
+          retention-days: 30

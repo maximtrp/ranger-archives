@@ -1,6 +1,19 @@
 # ranger-archives
 
-This is a plugin for [ranger](https://ranger.github.io) file manager that makes it much easier to compress and extract archives. It depends on archivers/compression programs such as `tar`, `zip`, `7z`, etc. It also supports and prioritizes parallelized versions of compression programs (like `pbzip2`, `pigz`, `pixz`, etc).
+A cross-platform plugin for [ranger](https://ranger.github.io) file manager that provides seamless archive compression and extraction. The plugin automatically detects and uses available archiver programs such as `tar`, `zip`, `7z`, and prioritizes parallelized versions like `pbzip2`, `pigz`, `pixz` for better performance.
+
+## Key Features
+
+- **Cross-platform compatibility** with intelligent tool detection and validation
+- **Extensive format support**: 20+ formats including tar.gz, tar.bz2, tar.xz, tar.lz4, tar.zst, zip, 7z, rar, lzh, zpaq
+- **Smart tool selection**: Prioritizes parallel compression tools (pigz, pbzip2, pixz) for better performance
+- **Automatic fallback**: Uses alternative tools when preferred ones are unavailable
+- **Safe operations**: Validates tool compatibility and handles encoding issues gracefully
+- **Multiple extraction modes**: Extract to current directory, custom directory, or individual subdirectories
+- **Custom flag support**: Pass specific flags to underlying compression/decompression tools
+- **Auto-completion**: Tab completion for common archive formats in ranger
+- **Standalone CLI**: Command-line interface for testing and automation outside ranger
+- **Comprehensive testing**: Real-world test suite with file integrity verification
 
 [![asciicast](https://asciinema.org/a/ii764wsN8rWZfMCwVlnJAWcPM.svg)](https://asciinema.org/a/ii764wsN8rWZfMCwVlnJAWcPM)
 
@@ -21,12 +34,28 @@ git clone https://github.com/maximtrp/ranger-archives.git
 
 ## Usage
 
-The following commands are available:
+### Ranger Commands
 
-* `:extract [DIRECTORY]`: extracting files to a current or specified directory (optional).
-* `:extract_raw [FLAGS]`: extracting files with specific flags (optional).
-* `:extract_to_dirs [FLAGS]`: extracting each archive to a separate directory. E.g.: `1.zip` to dir `1`, `2.zip` to dir `2`, etc.
-* `:compress [FLAGS] [FILENAME.EXT]`: compressing selected/marked files/directories to an archive. If an archive filename is not specified, it will be named after a parent dir.
+* `:extract [DIRECTORY]` - Extract archives to current or specified directory
+* `:extract_raw [FLAGS]` - Extract archives using custom flags (e.g., `-U` for Unicode handling)
+* `:extract_to_dirs [FLAGS]` - Extract each archive to its own subdirectory based on filename
+* `:compress [FLAGS] [FILENAME.EXT]` - Compress selected files/directories to archive with auto-naming
+
+The compress command supports tab completion for common formats (.zip, .tar.gz, .tar.bz2, .tar.xz, .7z) and automatically names archives after the current directory if no filename is provided.
+
+### Command Line Interface
+
+The plugin includes a standalone CLI tool for testing and automation:
+
+```bash
+# Compress files
+python3 archive_cli.py compress test.zip file1.txt file2.txt
+python3 archive_cli.py compress test.tar.gz folder/ --flags="-v"
+
+# Extract archives
+python3 archive_cli.py decompress test.zip
+python3 archive_cli.py decompress test.tar.gz --output=extract/
+```
 
 ## Examples
 
@@ -83,9 +112,59 @@ The other flags can be used likewise.
 
 ## Shortcuts
 
-You can also add these lines to `~/.config/ranger/rc.conf` to use these keyboard shortcuts (`ec`, `ex`):
+Add these lines to `~/.config/ranger/rc.conf` for keyboard shortcuts:
 
 ```
 map ex extract
 map ec compress
 ```
+
+## Testing
+
+Run the comprehensive test suite to verify format support:
+
+```bash
+python3 test_real_world.py
+```
+
+This creates test data with various file types and validates compression/decompression for all available formats on your system. The test suite:
+
+- Creates diverse test files (text, binary, Unicode, nested directories)
+- Tests compression and decompression cycles
+- Verifies file integrity using SHA256 checksums
+- Measures performance and compression ratios
+- Generates detailed reports with format compatibility
+
+## Supported Formats
+
+The plugin automatically detects and supports these formats based on available tools:
+
+### Archive Formats
+- **ZIP**: .zip (via zip/unzip or 7z)
+- **7-Zip**: .7z (via 7z/7za)
+- **RAR**: .rar (via rar/unrar or 7z)
+- **TAR**: .tar (via tar or 7z)
+
+### Compressed Archives
+- **Gzip**: .tar.gz, .tgz (via tar + gzip/pigz)
+- **Bzip2**: .tar.bz2, .tbz2 (via tar + bzip2/pbzip2/lbzip2)
+- **XZ**: .tar.xz, .txz (via tar + xz/pixz)
+- **LZ4**: .tar.lz4 (via tar + lz4)
+- **Zstandard**: .tar.zst (via tar + zstd)
+- **LZIP**: .tar.lz (via tar + lzip/plzip)
+- **LRZIP**: .tar.lrz (via tar + lrzip)
+- **LZOP**: .tar.lzop, .tzo (via tar + lzop)
+
+### Single-file Compression
+- **.gz**: via gzip/pigz
+- **.bz2**: via bzip2/pbzip2/lbzip2
+- **.xz**: via xz/pixz
+- **.lz4**: via lz4
+- **.lz**: via lzip/plzip
+- **.lrz**: via lrzip
+- **.lzop**: via lzop
+
+### Legacy Formats
+- **LHA/LZH**: .lha, .lzh (via lha)
+- **ZPAQ**: .zpaq (via zpaq)
+- **DEB**: .deb (via ar - extraction only)
