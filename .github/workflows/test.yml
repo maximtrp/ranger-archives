@@ -76,7 +76,6 @@ jobs:
             plzip \
             lzop \
             lrzip \
-            unrar \
             rar \
             zip \
             lhasa \
