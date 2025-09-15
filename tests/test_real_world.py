@@ -18,9 +18,8 @@ import time
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from archives_utils import (
-    get_compression_command,
-    get_decompression_command,
-    find_binaries,
+    ArchiveCompressor,
+    ArchiveDecompressor,
 )
 
 
@@ -126,7 +125,7 @@ class ArchiveTestRunner:
 
             # Test compression
             archive_path = work_dir / archive_name
-            compression_command = get_compression_command(
+            compression_command = ArchiveCompressor.get_command(
                 str(archive_path), flags, files_to_compress
             )
 
@@ -149,18 +148,22 @@ class ArchiveTestRunner:
                 test_result["error"] = f"Compression failed: {stderr}"
                 return test_result
 
-            # Handle cases where single-file compression creates filename.ext instead of target name
+            # Handle cases where single-file compression creates different filename
             if not archive_path.exists():
-                # Check for common compression patterns
+                # Check for tar variants when expecting single-file compression
                 potential_files = []
-                if archive_name.endswith(".gz") and len(files_to_compress) == 1:
-                    potential_files.append(test_copy / (files_to_compress[0] + ".gz"))
-                elif archive_name.endswith(".bz2") and len(files_to_compress) == 1:
-                    potential_files.append(test_copy / (files_to_compress[0] + ".bz2"))
-                elif archive_name.endswith(".xz") and len(files_to_compress) == 1:
-                    potential_files.append(test_copy / (files_to_compress[0] + ".xz"))
-                elif archive_name.endswith(".lz4") and len(files_to_compress) == 1:
-                    potential_files.append(test_copy / (files_to_compress[0] + ".lz4"))
+                if archive_name.endswith(".gz"):
+                    potential_files.append(work_dir / archive_name.replace(".gz", ".tar.gz"))
+                elif archive_name.endswith(".bz2"):
+                    potential_files.append(work_dir / archive_name.replace(".bz2", ".tar.bz2"))
+                elif archive_name.endswith(".xz"):
+                    potential_files.append(work_dir / archive_name.replace(".xz", ".tar.xz"))
+                elif archive_name.endswith(".lz4"):
+                    potential_files.append(work_dir / archive_name.replace(".lz4", ".tar.lz4"))
+                elif archive_name.endswith(".lrz"):
+                    potential_files.append(work_dir / archive_name.replace(".lrz", ".tar.lrz"))
+                elif archive_name.endswith(".lzop"):
+                    potential_files.append(work_dir / archive_name.replace(".lzop", ".tar.lzop"))
 
                 # Try to find and rename the created file
                 for potential_file in potential_files:
@@ -181,7 +184,7 @@ class ArchiveTestRunner:
             )
 
             # Test decompression
-            decompression_command = get_decompression_command(
+            decompression_command = ArchiveDecompressor.get_command(
                 str(archive_path), [], str(extract_dir)
             )
 
@@ -442,13 +445,13 @@ class ArchiveTestRunner:
             ("test_best.7z", ["-mx9"], ["7z"]),
             # Other formats
             ("test.rar", [], ["rar"]),
-            ("test.lzh", [], ["lha"]),
+            ("test.lzh", [], ["jlha"]),
             ("test.zpaq", [], ["zpaq"]),
         ]
 
         # Check tool availability and add formats
         for format_name, flags, required_tools in test_formats:
-            tools_available = all(find_binaries([tool])[0] for tool in required_tools)
+            tools_available = all(ArchiveCompressor._find_binaries([tool])[0] for tool in required_tools)
 
             if tools_available:
                 archive_formats.append((format_name, flags))
