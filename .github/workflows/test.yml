@@ -49,13 +49,12 @@ jobs:
             zip \
             unzip \
             tar \
-            lha \
+            lhasa \
             binutils \
-            cpio
-
-          sudo apt-get install -y rar || echo "rar not available in main repos"
-          sudo apt-get install -y zpaq || echo "zpaq not available in main repos"
-          sudo apt-get install -y pigz || echo "pigz not available"
+            cpio \
+            rar \
+            zpaq \
+            pigz
 
       - name: Install compression tools on macOS
         if: matrix.os == 'macos-latest'
@@ -80,11 +79,10 @@ jobs:
             unrar \
             rar \
             zip \
-            lha \
-            pigz
-
-          brew install zpaq || echo "zpaq not available via Homebrew"
-          brew install gnu-tar || echo "gnu-tar not available"
+            lhasa \
+            pigz \
+            zpaq \
+            gnu-tar
 
       - name: Verify installed tools
         run: |
