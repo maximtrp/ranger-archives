@@ -47,7 +47,6 @@ class ArchiveCompressor:
             (r"\.bz[2]*$", ["pbzip2", "lbzip2", "bzip2"]),
             (r"\.g*z$", ["pigz", "gzip"]),
             (r"\.(xz|lzma)$", ["pixz", "xz"]),
-            (r"\.lz4$", ["lz4"]),
             (r"\.lz$", ["plzip", "lzip"]),
         ]
 
@@ -59,16 +58,11 @@ class ArchiveCompressor:
                         archive_name, flags, files, binary, binary_path
                     )
 
-        # Special compression formats that handle multiple files directly
-        if search(r"\.lrz$", archive_name):
-            # lrzip doesn't work with multiple files directly - create tar first
-            tar_name = archive_name.replace(".lrz", ".tar.lrz")
-            binary, binary_path = ArchiveCompressor._find_binaries(["lrzip"])
-            if binary:
-                return ArchiveCompressor._get_tar_command(tar_name, flags, files, binary_path)
+        # Problematic compression formats - disable for now due to streaming issues
+        # lz4 and lrzip don't work reliably with tar's --use-compress-program
+        # These would need special handling or alternative tools
 
         if search(r"\.lzop$", archive_name):
-            # lzop doesn't work with multiple files directly - create tar first
             tar_name = archive_name.replace(".lzop", ".tar.lzop")
             binary, binary_path = ArchiveCompressor._find_binaries(["lzop"])
             if binary:
@@ -146,13 +140,21 @@ class ArchiveCompressor:
         binary_path: str,
     ) -> List[str]:
         """Handle single-file compression"""
-        # Always create tar version since single-file compression can't handle multiple files
+
+        # If only one file, use true single-file compression
+        if len(files) == 1:
+            return ArchiveCompressor._get_single_file_command(
+                archive_name, flags, files[0], binary_path
+            )
+
+        # Multiple files: create tar version since single-file compression can't handle multiple files
         tar_name = (
             archive_name.replace(".gz", ".tar.gz")
             .replace(".bz2", ".tar.bz2")
             .replace(".xz", ".tar.xz")
             .replace(".lzma", ".tar.lzma")
             .replace(".lz4", ".tar.lz4")
+            .replace(".lz", ".tar.lz")
             .replace(".lzop", ".tar.lzop")
         )
 
@@ -161,6 +163,33 @@ class ArchiveCompressor:
             tar_name = archive_name + ".tar"
 
         return ArchiveCompressor._get_tar_command(tar_name, flags, files, binary_path)
+
+    @staticmethod
+    def _get_single_file_command(
+        archive_name: str, flags: List[str], file_path: str, compression_program: str
+    ) -> List[str]:
+        """Generate single-file compression command"""
+        # For single file compression, we need to handle the output filename properly
+        # Most single-file compressors add their extension to the input filename
+
+        if compression_program.endswith("gzip") or compression_program.endswith("pigz"):
+            # gzip: gzip -c file > archive.gz
+            return [compression_program, "-c", *flags, file_path]
+        elif compression_program.endswith("bzip2") or compression_program.endswith("pbzip2") or compression_program.endswith("lbzip2"):
+            # bzip2: bzip2 -c file > archive.bz2
+            return [compression_program, "-c", *flags, file_path]
+        elif compression_program.endswith("xz") or compression_program.endswith("pixz"):
+            # xz: xz -c file > archive.xz
+            return [compression_program, "-c", *flags, file_path]
+        elif compression_program.endswith("lzip") or compression_program.endswith("plzip"):
+            # lzip: lzip -c file > archive.lz
+            return [compression_program, "-c", *flags, file_path]
+        elif compression_program.endswith("lzop"):
+            # lzop: lzop -c file > archive.lzop
+            return [compression_program, "-c", *flags, file_path]
+        else:
+            # Fallback: use stdout redirection
+            return [compression_program, "-c", *flags, file_path]
 
 
 class ArchiveDecompressor:
@@ -177,6 +206,43 @@ class ArchiveDecompressor:
         return res[0] if res else (None, None)
 
     @staticmethod
+    def _is_compressed_tar(archive_path: str) -> bool:
+        """Check if a compressed file is actually a tar archive by attempting to decompress and check"""
+        archive_name = Path(archive_path).name.lower()
+
+        # If it has .tar. in the name, it's definitely a tar archive
+        if '.tar.' in archive_name:
+            return True
+
+        # For ambiguous cases (.gz, .bz2, etc.), try to peek at the content
+        try:
+            if archive_name.endswith('.gz'):
+                import gzip
+                with gzip.open(archive_path, 'rb') as f:
+                    header = f.read(512)
+            elif archive_name.endswith('.bz2'):
+                import bz2
+                with bz2.open(archive_path, 'rb') as f:
+                    header = f.read(512)
+            elif archive_name.endswith('.xz'):
+                import lzma
+                with lzma.open(archive_path, 'rb') as f:
+                    header = f.read(512)
+            else:
+                return False
+
+            if len(header) < 512:
+                return False
+
+            # Check for tar magic at offset 257
+            magic = header[257:263]
+            return magic == b'ustar\x00' or magic == b'ustar ' or header[257:265] == b'ustar  \x00'
+
+        except (ImportError, IOError, OSError, Exception):
+            # If we can't check, assume it's a tar archive for safety
+            return True
+
+    @staticmethod
     def get_command(
         archive_name: str, flags: List[str], to_dir: str = None
     ) -> List[str]:
@@ -184,15 +250,26 @@ class ArchiveDecompressor:
         if to_dir:
             Path(to_dir).mkdir(parents=True, exist_ok=True)
 
-        # Tar-based formats (including single compression that are actually tar)
-        if search(
-            r"\.tar\.(bz2*|g*z|lz(4|ma)|lr*z|lzop|xz|zst)$|\.t(a|b|g|l|x)z2*$|\.gz$|\.bz2$|\.xz$|\.lz4$|\.lrz$|\.lzop$",
-            archive_name,
-        ):
+        # Tar-based formats (always tar)
+        if search(r"\.tar\.(bz2*|g*z|lz(4|ma)|lr*z|lzop|xz|zst)$|\.t(a|b|g|l|x)z2*$", archive_name):
             binary, binary_path = ArchiveDecompressor._find_binaries(["tar"])
             if binary:
                 safe_flags = flags + (["-C", to_dir] if to_dir else [])
                 return [binary_path, "-xf", archive_name, *safe_flags]
+
+        # Ambiguous single-file compression formats - check if they're actually tar
+        if search(r"\.gz$|\.bz2$|\.xz$|\.lz$|\.lzop$", archive_name):
+            if ArchiveDecompressor._is_compressed_tar(archive_name):
+                # It's a compressed tar archive
+                binary, binary_path = ArchiveDecompressor._find_binaries(["tar"])
+                if binary:
+                    safe_flags = flags + (["-C", to_dir] if to_dir else [])
+                    return [binary_path, "-xf", archive_name, *safe_flags]
+            else:
+                # It's a true single-file archive
+                return ArchiveDecompressor._get_single_file_decompress_command(
+                    archive_name, flags, to_dir
+                )
 
         # Archive formats
         if search(r"\.7z$", archive_name):
@@ -238,9 +315,11 @@ class ArchiveDecompressor:
         if search(r"\.l(zh|ha)$", archive_name):
             binary, binary_path = ArchiveDecompressor._find_binaries(["jlha", "lha"])
             if binary == "jlha":
-                command = [binary_path, "x", *flags, archive_name]
                 if to_dir:
-                    command += [f"w={str(Path(to_dir))}"]
+                    # jlha requires running from the target directory or using -w option
+                    command = [binary_path, "x", f"-w={str(Path(to_dir))}", *flags, archive_name]
+                else:
+                    command = [binary_path, "x", *flags, archive_name]
                 return command
             elif binary == "lha":
                 command = [binary_path, "x", *flags, archive_name]
@@ -281,6 +360,57 @@ class ArchiveDecompressor:
                 fallback_command += [f"-o{Path(to_dir)}"]
 
         return fallback_command
+
+    @staticmethod
+    def _get_single_file_decompress_command(
+        archive_name: str, flags: List[str], to_dir: str = None
+    ) -> List[str]:
+        """Generate single-file decompression command"""
+        archive_path = Path(archive_name)
+
+        if archive_name.endswith('.gz'):
+            binary, binary_path = ArchiveDecompressor._find_binaries(["gzip", "pigz"])
+            if binary:
+                output_file = archive_path.stem
+                if to_dir:
+                    output_file = str(Path(to_dir) / output_file)
+                # gzip -dc archive.gz > output_file
+                return [binary_path, "-dc", *flags, archive_name]
+        elif archive_name.endswith('.bz2'):
+            binary, binary_path = ArchiveDecompressor._find_binaries(["bzip2", "pbzip2", "lbzip2"])
+            if binary:
+                output_file = archive_path.stem
+                if to_dir:
+                    output_file = str(Path(to_dir) / output_file)
+                # bzip2 -dc archive.bz2 > output_file
+                return [binary_path, "-dc", *flags, archive_name]
+        elif archive_name.endswith('.xz'):
+            binary, binary_path = ArchiveDecompressor._find_binaries(["xz", "pixz"])
+            if binary:
+                output_file = archive_path.stem
+                if to_dir:
+                    output_file = str(Path(to_dir) / output_file)
+                # xz -dc archive.xz > output_file
+                return [binary_path, "-dc", *flags, archive_name]
+        elif archive_name.endswith('.lz'):
+            binary, binary_path = ArchiveDecompressor._find_binaries(["lzip", "plzip"])
+            if binary:
+                output_file = archive_path.stem
+                if to_dir:
+                    output_file = str(Path(to_dir) / output_file)
+                # lzip -dc archive.lz > output_file
+                return [binary_path, "-dc", *flags, archive_name]
+        elif archive_name.endswith('.lzop'):
+            binary, binary_path = ArchiveDecompressor._find_binaries(["lzop"])
+            if binary:
+                output_file = archive_path.stem
+                if to_dir:
+                    output_file = str(Path(to_dir) / output_file)
+                # lzop -dc archive.lzop > output_file
+                return [binary_path, "-dc", *flags, archive_name]
+
+        # Fallback - shouldn't reach here
+        return []
 
 
 def parse_escape_args(args: str = "") -> List[str]:

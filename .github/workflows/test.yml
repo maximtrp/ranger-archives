@@ -98,7 +98,7 @@ jobs:
             "pbzip2:pbzip2 --version"
             "lbzip2:lbzip2 --version"
             "xz:xz --version"
-            "pixz:pixz --version"
+            "pixz:pixz"
             "lz4:lz4 --version"
             "zstd:zstd --version"
             "lzip:lzip --version"
