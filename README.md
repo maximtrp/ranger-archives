@@ -144,27 +144,26 @@ The plugin automatically detects and supports these formats based on available t
 - **7-Zip**: .7z (via 7z/7za)
 - **RAR**: .rar (via rar/unrar or 7z)
 - **TAR**: .tar (via tar or 7z)
+- **ZPAQ**: .zpaq (via zpaq)
 
-### Compressed Archives
+### Compressed Archives (tar-based)
 - **Gzip**: .tar.gz, .tgz (via tar + gzip/pigz)
 - **Bzip2**: .tar.bz2, .tbz2 (via tar + bzip2/pbzip2/lbzip2)
 - **XZ**: .tar.xz, .txz (via tar + xz/pixz)
+- **LZMA**: .tar.lzma (via tar + xz/pixz)
 - **LZ4**: .tar.lz4 (via tar + lz4)
-- **Zstandard**: .tar.zst (via tar + zstd)
-- **LZIP**: .tar.lz (via tar + lzip/plzip)
 - **LRZIP**: .tar.lrz (via tar + lrzip)
+- **LZIP**: .tar.lz (via tar + lzip/plzip)
 - **LZOP**: .tar.lzop, .tzo (via tar + lzop)
+- **Zstandard**: .tar.zst (via tar + zstd)
 
-### Single-file Compression
-- **.gz**: via gzip/pigz
-- **.bz2**: via bzip2/pbzip2/lbzip2
-- **.xz**: via xz/pixz
-- **.lz4**: via lz4
-- **.lz**: via lzip/plzip
-- **.lrz**: via lrzip
-- **.lzop**: via lzop
+### Smart Single-file Compression
+- **.gz**: via gzip/pigz (single file → .gz, multiple files → .tar.gz)
+- **.bz2**: via bzip2/pbzip2/lbzip2 (single file → .bz2, multiple files → .tar.bz2)
+- **.xz**: via xz/pixz (single file → .xz, multiple files → .tar.xz)
+- **.lzma**: via xz/pixz (single file → .lzma, multiple files → .tar.lzma)
+- **.lz**: via lzip/plzip (single file → .lz, multiple files → .tar.lz)
+- **.lzop**: via lzop (single file → .lzop, multiple files → .tar.lzop)
 
-### Legacy Formats
-- **LHA/LZH**: .lha, .lzh (via lha)
-- **ZPAQ**: .zpaq (via zpaq)
+### Extraction-only Formats
 - **DEB**: .deb (via ar - extraction only)
