@@ -8,9 +8,7 @@ import platform
 
 def _find_binaries(binaries: List[str]) -> Union[Tuple[str, str], Tuple[None, None]]:
     """Finds archivers binaries in PATH"""
-    res = list(
-        filter(lambda x: x[1] is not None, zip(binaries, map(which, binaries)))
-    )
+    res = list(filter(lambda x: x[1] is not None, zip(binaries, map(which, binaries))))
     return res[0] if res else (None, None)
 
 
@@ -56,10 +54,6 @@ class ArchiveCompressor:
                         archive_name, flags, files, binary, binary_path
                     )
 
-        # Problematic compression formats - disable for now due to streaming issues
-        # lz4 and lrzip don't work reliably with tar's --use-compress-program
-        # These would need special handling or alternative tools
-
         if search(r"\.lzop$", archive_name):
             tar_name = archive_name.replace(".lzop", ".tar.lzop")
             binary, binary_path = _find_binaries(["lzop"])
@@ -72,8 +66,7 @@ class ArchiveCompressor:
         if search(r"\.7z$", archive_name):
             binary, binary_path = _find_binaries(["7z", "7za"])
             if binary:
-                safe_flags = flags + ["-r"] if platform.system() != "Windows" else flags
-                return [binary_path, "a", *safe_flags, archive_name, *files]
+                return [binary_path, "a", *[*flags, "-bd"], archive_name, *files]
 
         if search(r"\.rar$", archive_name):
             binary, binary_path = _find_binaries(["rar"])
@@ -85,8 +78,7 @@ class ArchiveCompressor:
             if binary == "zip":
                 return [binary_path, *(flags + ["-r"]), archive_name, *files]
             elif binary in ["7z", "7za"]:
-                safe_flags = flags + ["-r"] if platform.system() != "Windows" else flags
-                return [binary_path, "a", *safe_flags, archive_name, *files]
+                return [binary_path, "a", *flags, archive_name, *files]
 
         if search(r"\.zpaq$", archive_name):
             binary, binary_path = _find_binaries(["zpaq"])
@@ -207,9 +199,7 @@ class ArchiveDecompressor:
                 return [binary_path, "x", *safe_flags, archive_name]
 
         if search(r"\.rar$", archive_name):
-            binary, binary_path = _find_binaries(
-                ["rar", "unrar", "7z", "7za"]
-            )
+            binary, binary_path = _find_binaries(["rar", "unrar", "7z", "7za"])
             if binary in ["rar", "unrar"]:
                 command = [binary_path, "x", *flags, archive_name]
                 if to_dir:
@@ -220,9 +210,7 @@ class ArchiveDecompressor:
                 return [binary_path, "x", *safe_flags, archive_name]
 
         if search(r"\.zip$", archive_name):
-            binary, binary_path = _find_binaries(
-                ["7z", "7za", "unzip"]
-            )
+            binary, binary_path = _find_binaries(["7z", "7za", "unzip"])
             if binary == "unzip":
                 command = [binary_path, *flags, archive_name]
                 if to_dir:
@@ -241,9 +229,7 @@ class ArchiveDecompressor:
                 return command
 
         if search(r"\.tar$", archive_name):
-            binary, binary_path = _find_binaries(
-                ["tar", "7z", "7za"]
-            )
+            binary, binary_path = _find_binaries(["tar", "7z", "7za"])
             if binary == "tar":
                 safe_flags = flags + (["-C", str(Path(to_dir))] if to_dir else [])
                 return [binary_path, "-xf", archive_name, *safe_flags]
