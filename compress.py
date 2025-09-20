@@ -38,6 +38,7 @@ class compress(Command):
         archive_name = archive_name.strip("'")
         command = ArchiveCompressor.get_command(archive_name, flags, filenames)
 
+        print(command)
         # Making description line
         files_num_str = f"{files_num} objects" if files_num > 1 else "1 object"
         descr = f"Compressing {files_num_str} -> {Path(archive_name).name}"
