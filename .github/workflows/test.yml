@@ -64,7 +64,6 @@ jobs:
             p7zip \
             bzip2 \
             pbzip2 \
-            lbzip2 \
             xz \
             pixz \
             lz4 \
