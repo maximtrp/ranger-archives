@@ -1,11 +1,13 @@
 # ranger-archives
 
+[![Cross-Platform Archive Tests](https://github.com/maximtrp/ranger-archives/actions/workflows/test.yml/badge.svg)](https://github.com/maximtrp/ranger-archives/actions/workflows/test.yml)
+
 A cross-platform plugin for [ranger](https://ranger.github.io) file manager that provides seamless archive compression and extraction. The plugin automatically detects and uses available archiver programs such as `tar`, `zip`, `7z`, and prioritizes parallelized versions like `pbzip2`, `pigz`, `pixz` for better performance.
 
 ## Key Features
 
 - **Cross-platform compatibility** with intelligent tool detection and validation
-- **Extensive format support**: 20+ formats including tar.gz, tar.bz2, tar.xz, tar.lz4, tar.zst, zip, 7z, rar, lzh, zpaq
+- **Extensive format support**: 20+ formats including tar.gz, tar.bz2, tar.xz, tar.lz4, tar.zst, zip, 7z, rar, and zpaq
 - **Smart tool selection**: Prioritizes parallel compression tools (pigz, pbzip2, pixz) for better performance
 - **Automatic fallback**: Uses alternative tools when preferred ones are unavailable
 - **Safe operations**: Validates tool compatibility and handles encoding issues gracefully
@@ -124,6 +126,7 @@ map ec compress
 Run the comprehensive test suite to verify format support:
 
 ```bash
+python3 -m unittest discover -s tests -p 'test_commands.py'
 python3 tests/test_real_world.py
 ```
 
@@ -141,7 +144,7 @@ The plugin automatically detects and supports these formats based on available t
 
 ### Archive Formats
 - **ZIP**: .zip (via zip/unzip or 7z)
-- **7-Zip**: .7z (via 7z/7za)
+- **7-Zip**: .7z (via 7z/7zz/7za)
 - **RAR**: .rar (via rar/unrar or 7z)
 - **TAR**: .tar (via tar or 7z)
 - **ZPAQ**: .zpaq (via zpaq)

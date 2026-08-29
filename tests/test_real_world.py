@@ -528,9 +528,7 @@ class ArchiveTestRunner:
 
         # Check tool availability and add formats
         for format_name, flags, required_tools in test_formats:
-            tools_available = all(
-                _find_binaries([tool])[0] for tool in required_tools
-            )
+            tools_available = all(_find_binaries([tool])[0] for tool in required_tools)
 
             if tools_available:
                 archive_formats.append((format_name, flags))
@@ -550,7 +548,7 @@ class ArchiveTestRunner:
             "Best compression ratio": (
                 "compression_ratio",
                 lambda x: f"{x:.1f}% reduction",
-                min,
+                max,
             ),
             "Fastest compression": ("compression_time", lambda x: f"{x:.2f}s", min),
             "Fastest decompression": ("decompression_time", lambda x: f"{x:.2f}s", min),

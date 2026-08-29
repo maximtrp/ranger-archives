@@ -1,6 +1,7 @@
-from shlex import split, quote
+from shlex import split
 from shutil import which
 from re import search
+import sys
 from typing import Union, Tuple, List, Optional, Dict, Any
 from pathlib import Path
 
@@ -25,7 +26,7 @@ FORMATS = {
         "extraction": [{"tools": ["tar"], "flags": ["-xf"]}],
     },
     "tar_xz": {
-        "patterns": [r"\.tar\.xz$", r"\.txz$", r"\.tlz$"],
+        "patterns": [r"\.tar\.xz$", r"\.tar\.lzma$", r"\.txz$", r"\.tlz$"],
         "compression": [{"tools": ["pixz", "xz"], "flags": ["-cf"]}],
         "extraction": [{"tools": ["tar"], "flags": ["-xf"]}],
     },
@@ -69,6 +70,7 @@ FORMATS = {
         "check_tar": True,
         "compression": [{"tools": ["pbzip2", "lbzip2", "bzip2"], "flags": ["-c"]}],
         "extraction": [{"tools": ["pbzip2", "lbzip2", "bzip2"], "flags": ["-dk"]}],
+        "stream_flags": ["-dc"],
     },
     "bz3": {
         "patterns": [r"\.bz3$"],
@@ -76,6 +78,7 @@ FORMATS = {
         "check_tar": True,
         "compression": [{"tools": ["bzip3"], "flags": ["-c"]}],
         "extraction": [{"tools": ["bzip3"], "flags": ["-dk"]}],
+        "stream_flags": ["-dc"],
     },
     "gz": {
         "patterns": [r"\.gz$"],
@@ -83,6 +86,7 @@ FORMATS = {
         "check_tar": True,
         "compression": [{"tools": ["pigz", "gzip"], "flags": ["-c"]}],
         "extraction": [{"tools": ["pigz", "gzip"], "flags": ["-dk"]}],
+        "stream_flags": ["-dc"],
     },
     "xz": {
         "patterns": [r"\.xz$", r"\.lzma$"],
@@ -90,6 +94,7 @@ FORMATS = {
         "check_tar": True,
         "compression": [{"tools": ["pixz", "xz"], "flags": ["-c"]}],
         "extraction": [{"tools": ["pixz", "xz"], "flags": ["-dk"]}],
+        "stream_flags": ["-dc"],
     },
     "lzip": {
         "patterns": [r"\.lz$"],
@@ -97,6 +102,7 @@ FORMATS = {
         "check_tar": True,
         "compression": [{"tools": ["plzip", "lzip"], "flags": ["-c"]}],
         "extraction": [{"tools": ["plzip", "lzip"], "flags": ["-dk"]}],
+        "stream_flags": ["-dc"],
     },
     "lz4": {
         "patterns": [r"\.lz4$"],
@@ -104,6 +110,7 @@ FORMATS = {
         "check_tar": True,
         "compression": [{"tools": ["lz4"], "flags": ["-c"]}],
         "extraction": [{"tools": ["lz4"], "flags": ["-dk"]}],
+        "stream_flags": ["-dc"],
     },
     "lzop": {
         "patterns": [r"\.lzop$"],
@@ -111,6 +118,7 @@ FORMATS = {
         "check_tar": True,
         "compression": [{"tools": ["lzop"], "flags": ["-c"]}],
         "extraction": [{"tools": ["lzop"], "flags": ["-dk"]}],
+        "stream_flags": ["-dc"],
     },
     "lrzip": {
         "patterns": [r"\.lrz$"],
@@ -118,30 +126,33 @@ FORMATS = {
         "check_tar": True,
         "compression": [{"tools": ["lrzip"], "flags": ["-o", "-"]}],
         "extraction": [{"tools": ["lrzip"], "flags": ["-d"]}],
+        "stream_flags": ["-d", "-o", "-"],
     },
     # Standard archive formats
     "seven_zip": {
         "patterns": [r"\.7z$"],
-        "compression": [{"tools": ["7z"], "flags": ["a"]}],
-        "extraction": [{"tools": ["7z"], "flags": ["x"], "output_flag": "-o"}],
+        "compression": [{"tools": ["7z", "7zz", "7za"], "flags": ["a"]}],
+        "extraction": [
+            {"tools": ["7z", "7zz", "7za"], "flags": ["x"], "output_flag": "-o"}
+        ],
     },
     "rar": {
         "patterns": [r"\.rar$"],
         "compression": [{"tools": ["rar"], "flags": ["a", "-r"]}],
         "extraction": [
             {"tools": ["unrar", "rar"], "flags": ["x"], "output_flag": "-op"},
-            {"tools": ["7z"], "flags": ["x"], "output_flag": "-o"},
+            {"tools": ["7z", "7zz", "7za"], "flags": ["x"], "output_flag": "-o"},
         ],
     },
     "zip": {
         "patterns": [r"\.zip$"],
         "compression": [
             {"tools": ["zip"], "flags": ["-r"]},
-            {"tools": ["7z"], "flags": ["a", "-tzip"]},
+            {"tools": ["7z", "7zz", "7za"], "flags": ["a", "-tzip"]},
         ],
         "extraction": [
             {"tools": ["unzip"], "flags": [], "output_flag": "-d"},
-            {"tools": ["7z"], "flags": ["x"], "output_flag": "-o"},
+            {"tools": ["7z", "7zz", "7za"], "flags": ["x"], "output_flag": "-o"},
         ],
     },
     "zpaq": {
@@ -217,6 +228,16 @@ def is_compressed_tar_archive(file_path: str) -> bool:
     return ".tar." in Path(file_path).name.lower()
 
 
+def protect_operand(value: str) -> str:
+    if value.startswith("-") and Path(value).parent == Path("."):
+        return f"./{value}"
+    return value
+
+
+def worker_command(*args: str) -> List[str]:
+    return [sys.executable, str(Path(__file__).with_name("archive_worker.py")), *args]
+
+
 class ArchiveCompressor:
     """Handles archive compression operations"""
 
@@ -227,9 +248,7 @@ class ArchiveCompressor:
         """Get compression command for the given archive format"""
         format_name, format_config = find_archive_format(archive_name)
         if not format_config:
-            return ArchiveCompressor._get_fallback_compression_command(
-                archive_name, user_flags, files
-            )
+            return []
 
         # Try to find available compression tools
         tool, tool_flags, _ = find_available_tool_group(format_config["compression"])
@@ -244,9 +263,7 @@ class ArchiveCompressor:
                     return ArchiveCompressor._build_standard_command(
                         fallback_tool, fallback_flags, user_flags, archive_name, files
                     )
-            return ArchiveCompressor._get_fallback_compression_command(
-                archive_name, user_flags, files
-            )
+            return []
 
         # Single-file compression
         if format_config.get("single_file"):
@@ -288,10 +305,11 @@ class ArchiveCompressor:
             which("tar"),
             *tool_flags,
             *user_flags,
-            archive_name,
+            protect_operand(archive_name),
             "--use-compress-program",
             which(tool),
-            *files,
+            "--",
+            *(protect_operand(file) for file in files),
         ]
 
     @staticmethod
@@ -304,12 +322,13 @@ class ArchiveCompressor:
     ) -> List[str]:
         """Handle single-file compression"""
         if len(files) == 1:
-            flags_str = " ".join(tool_flags + user_flags)
-            return [
-                "sh",
-                "-c",
-                f"{which(tool)} {flags_str} '{files[0]}' > '{archive_name}'",
+            command = [
+                which(tool),
+                *tool_flags,
+                *user_flags,
+                protect_operand(files[0]),
             ]
+            return worker_command("--stdout", archive_name, "--", *command)
 
         return ArchiveCompressor._convert_to_tar_format(
             tool, tool_flags, user_flags, archive_name, files
@@ -362,19 +381,19 @@ class ArchiveCompressor:
         files: List[str],
     ) -> List[str]:
         """Build standard archive command"""
-        return [which(tool), *tool_flags, *user_flags, archive_name, *files]
+        return [
+            which(tool),
+            *tool_flags,
+            *user_flags,
+            protect_operand(archive_name),
+            *(protect_operand(file) for file in files),
+        ]
 
     @staticmethod
     def _get_fallback_compression_command(
         archive_name: str, user_flags: List[str], files: List[str]
     ) -> List[str]:
-        """Get fallback compression command using zip"""
-        zip_config = FORMATS.get("zip")
-        tool, tool_flags, _ = find_available_tool_group(zip_config["compression"])
-        if tool:
-            return ArchiveCompressor._build_standard_command(
-                tool, tool_flags, user_flags, f"{archive_name}.zip", files
-            )
+        """Unknown or unavailable formats are not silently changed."""
         return []
 
 
@@ -386,15 +405,12 @@ class ArchiveDecompressor:
         archive_name: str, user_flags: List[str], to_dir: str = None
     ) -> List[str]:
         """Get decompression command for the given archive format"""
-        if to_dir:
-            Path(to_dir).mkdir(parents=True, exist_ok=True)
-
         format_name, format_config = find_archive_format(archive_name)
 
         # Special handling for formats that need piped extraction
         if format_config and format_config.get("special_extraction") == "pipe":
             return ArchiveDecompressor._build_pipe_extraction_command(
-                archive_name, format_config, to_dir
+                archive_name, format_config, user_flags, to_dir
             )
 
         if not format_config:
@@ -407,15 +423,20 @@ class ArchiveDecompressor:
             if is_compressed_tar_archive(archive_name):
                 # It's a compressed tar archive
                 if is_command_available("tar"):
-                    return (
+                    command = (
                         [which("tar"), "-xf", archive_name]
                         + (["-C", to_dir] if to_dir else [])
                         + user_flags
                     )
+                    return (
+                        worker_command("--mkdir", to_dir, "--", *command)
+                        if to_dir
+                        else command
+                    )
             else:
                 # It's a true single-file compression
                 return ArchiveDecompressor._build_single_file_extraction_command(
-                    archive_name, format_config, user_flags
+                    archive_name, format_config, user_flags, to_dir
                 )
 
         # Standard extraction
@@ -445,29 +466,63 @@ class ArchiveDecompressor:
 
     @staticmethod
     def _build_pipe_extraction_command(
-        archive_name: str, format_config: Dict[str, Any], to_dir: Optional[str]
+        archive_name: str,
+        format_config: Dict[str, Any],
+        user_flags: List[str],
+        to_dir: Optional[str],
     ) -> List[str]:
         """Build piped extraction command for special formats"""
         compression_tool, compression_flags, _ = find_available_tool_group(
             format_config["compression"]
         )
         if compression_tool and is_command_available("tar"):
-            pipe_cmd = (
-                f"{which(compression_tool)} -dc '{archive_name}' | {which('tar')} -xf -"
-            )
+            first = [which(compression_tool), "-dc", protect_operand(archive_name)]
+            second = [which("tar"), "-xf", "-"]
             if to_dir:
-                pipe_cmd += f" -C '{to_dir}'"
-            return ["sh", "-c", pipe_cmd]
+                second += ["-C", to_dir]
+            second += user_flags
+            return worker_command(
+                *(["--mkdir", to_dir] if to_dir else []),
+                "--pipe",
+                "--",
+                *first,
+                "::",
+                *second,
+            )
         return []
 
     @staticmethod
     def _build_single_file_extraction_command(
-        archive_name: str, format_config: Dict[str, Any], user_flags: List[str]
+        archive_name: str,
+        format_config: Dict[str, Any],
+        user_flags: List[str],
+        to_dir: Optional[str],
     ) -> List[str]:
         """Build single-file extraction command"""
         tool, tool_flags, _ = find_available_tool_group(format_config["extraction"])
         if tool:
-            return [which(tool), *tool_flags, *user_flags, archive_name]
+            if to_dir:
+                suffix = next(
+                    pattern.replace(r"\.", ".").removesuffix("$")
+                    for pattern in format_config["patterns"]
+                    if search(pattern, archive_name.lower())
+                )
+                output_name = Path(archive_name).name[: -len(suffix)]
+                command = [
+                    which(tool),
+                    *format_config["stream_flags"],
+                    *user_flags,
+                    protect_operand(archive_name),
+                ]
+                return worker_command(
+                    "--stdout", str(Path(to_dir) / output_name), "--", *command
+                )
+            return [
+                which(tool),
+                *tool_flags,
+                *user_flags,
+                protect_operand(archive_name),
+            ]
         return []
 
     @staticmethod
@@ -480,7 +535,12 @@ class ArchiveDecompressor:
         to_dir: Optional[str],
     ) -> List[str]:
         """Build standard extraction command"""
-        cmd = [which(tool), *tool_flags, *user_flags, archive_name]
+        cmd = [
+            which(tool),
+            *tool_flags,
+            *user_flags,
+            protect_operand(archive_name),
+        ]
 
         # Handle output directory - match Lua logic
         if to_dir and output_flag:
@@ -495,6 +555,12 @@ class ArchiveDecompressor:
         elif to_dir and tool == "tar":
             cmd += ["-C", to_dir]
 
+        if to_dir and tool == "ar":
+            return worker_command("--cwd", to_dir, "--", *cmd)
+
+        if to_dir:
+            return worker_command("--mkdir", to_dir, "--", *cmd)
+
         return cmd
 
     @staticmethod
@@ -503,26 +569,33 @@ class ArchiveDecompressor:
     ) -> List[str]:
         """Get fallback extraction command"""
         # Try 7z first, then unzip
-        for tool in ["7z", "unzip"]:
+        for tool in ["7z", "7zz", "7za", "unzip"]:
             if is_command_available(tool):
-                if tool == "7z":
-                    return [which(tool), "x", *user_flags, archive_name] + (
-                        [f"-o{to_dir}"] if to_dir else []
-                    )
-                elif tool == "unzip":
-                    return [which(tool), *user_flags, archive_name] + (
-                        ["-d", to_dir] if to_dir else []
-                    )
+                if tool != "unzip":
+                    command = [
+                        which(tool),
+                        "x",
+                        *user_flags,
+                        protect_operand(archive_name),
+                    ] + ([f"-o{to_dir}"] if to_dir else [])
+                else:
+                    command = [
+                        which(tool),
+                        *user_flags,
+                        protect_operand(archive_name),
+                    ] + (["-d", to_dir] if to_dir else [])
+                return (
+                    worker_command("--mkdir", to_dir, "--", *command)
+                    if to_dir
+                    else command
+                )
 
-        # Final fallback - assume 7z is available
-        return ["7z", "x", *user_flags, archive_name] + (
-            [f"-o{to_dir}"] if to_dir else []
-        )
+        return []
 
 
 def parse_escape_args(args: str = "") -> List[str]:
-    """Parses and escapes arguments"""
-    return list(map(quote, split(args)))
+    """Parse shell-like user input into direct argv values."""
+    return split(args)
 
 
 # Backwards compatibility functions

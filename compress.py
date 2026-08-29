@@ -38,13 +38,19 @@ class compress(Command):
         archive_name = archive_name.strip("'")
         command = ArchiveCompressor.get_command(archive_name, flags, filenames)
 
-        print(command)
+        if not command:
+            self.fm.notify(
+                f"No compression tool available for {archive_name}", bad=True
+            )
+            return
         # Making description line
         files_num_str = f"{files_num} objects" if files_num > 1 else "1 object"
         descr = f"Compressing {files_num_str} -> {Path(archive_name).name}"
 
         # Creating archive
-        obj = CommandLoader(args=command, descr=descr, read=True)
+        obj = CommandLoader(
+            args=command, descr=descr, read=False, popenArgs={"cwd": cwd.path}
+        )
 
         def refresh(_):
             _cwd = self.fm.get_directory(cwd.path)
